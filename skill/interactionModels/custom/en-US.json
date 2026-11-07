@@ -27,19 +27,7 @@
           "samples": [
             "note {text}",
             "remember {text}",
-            "record {text}",
-            "the {text}",
-            "my {text}",
-            "we {text}",
-            "it {text}",
-            "this {text}",
-            "that {text}",
-            "what if {text}",
-            "maybe {text}",
-            "need to {text}",
-            "remind me {text}",
-            "idea {text}",
-            "thought {text}"
+            "record {text}"
           ]
         },
         {

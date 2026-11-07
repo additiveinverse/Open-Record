@@ -77,6 +77,14 @@ describe("Alexa capture", () => {
     expect(uploadRecord.mock.calls[0][1]).toContain("topic: Inbox\n");
   });
 
+  it("saves the current record when Alexa Stop ends the session", async () => {
+    const capture = await invoke(intent("CaptureIntent", "text", "a thought"));
+    const stopped = await invoke(intent("AMAZON.StopIntent"), capture.sessionAttributes);
+
+    expect(uploadRecord.mock.calls[0][1]).toContain("a thought\n\n[[Inbox]]");
+    expect(stopped.response.shouldEndSession).toBe(true);
+  });
+
   it("sets the optional topic at the end and saves immediately", async () => {
     const capture = await invoke(intent("CaptureIntent", "text", "a thought"));
     const end = await invoke(intent("EndRecordIntent"), capture.sessionAttributes);
