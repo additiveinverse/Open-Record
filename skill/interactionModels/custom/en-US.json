@@ -28,11 +28,6 @@
             "note {text}",
             "remember {text}",
             "record {text}",
-            "i {text}",
-            "i just {text}",
-            "i need to {text}",
-            "i was {text}",
-            "i think {text}",
             "the {text}",
             "my {text}",
             "we {text}",
@@ -46,6 +41,13 @@
             "idea {text}",
             "thought {text}"
           ]
+        },
+        {
+          "name": "FirstPersonCaptureIntent",
+          "slots": [
+            { "name": "text", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": ["i {text}"]
         },
         {
           "name": "EndRecordIntent",

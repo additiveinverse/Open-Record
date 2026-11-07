@@ -8,6 +8,7 @@
     "build": "tsc --noEmit",
     "sam:build": "sam build",
     "sam:deploy": "npm run sam:build && sam deploy",
+    "alexa:model": "ask smapi set-interaction-model --skill-id amzn1.ask.skill.3eed97c2-bea3-429d-8b09-d42129d9352a --stage development --locale en-US --interaction-model file:skill/interactionModels/custom/en-US.json --profile open-record",
     "test": "vitest run",
     "auth": "tsx scripts/auth.ts"
   },

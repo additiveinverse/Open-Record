@@ -116,12 +116,14 @@ const TopicPromptHandler: RequestHandler = {
 };
 
 const CaptureHandler: RequestHandler = {
-  canHandle: (i) => isIntent(i, "CaptureIntent"),
+  canHandle: (i) => isIntent(i, "CaptureIntent") || isIntent(i, "FirstPersonCaptureIntent"),
   handle(i) {
     const request = i.requestEnvelope.request;
     if (request.type !== "IntentRequest") throw new Error("unreachable");
     const rawText = request.intent.slots?.text?.value;
-    const spoken = rawText ? formatSpokenCommands(rawText) : "";
+    const firstPerson = request.intent.name === "FirstPersonCaptureIntent";
+    const restoredText = rawText && firstPerson && !/^i\b/i.test(rawText) ? `I ${rawText}` : rawText;
+    const spoken = restoredText ? formatSpokenCommands(restoredText) : "";
     if (spoken) {
       setBuffer(i, [...getBuffer(i), spoken]);
     }

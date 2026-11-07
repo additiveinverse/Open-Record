@@ -106,6 +106,14 @@ describe("Alexa capture", () => {
     expect(uploadRecord.mock.calls[0][1]).toContain("thought one. next thought!!!\nlast thought.\n\n[[Inbox]]");
   });
 
+  it("restores a leading I removed as the intent carrier", async () => {
+    const capture = await invoke(intent("FirstPersonCaptureIntent", "text", "think this is a fragment"));
+    const end = await invoke(intent("EndRecordIntent"), capture.sessionAttributes);
+    await invoke(intent("AMAZON.NoIntent"), end.sessionAttributes);
+
+    expect(uploadRecord.mock.calls[0][1]).toContain("I think this is a fragment\n\n[[Inbox]]");
+  });
+
   it("prompts for a topic command without losing the existing buffer", async () => {
     const capture = await invoke(intent("CaptureIntent", "text", "a thought"));
     const prompt = await invoke(intent("TopicPromptIntent"), capture.sessionAttributes);
