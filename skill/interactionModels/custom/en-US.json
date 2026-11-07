@@ -69,7 +69,7 @@
         { "name": "AMAZON.FallbackIntent", "samples": [] },
         { "name": "AMAZON.NavigateHomeIntent", "samples": [] }
       ],
-      "types": []
+      "types": []   
     }
   }
 }
