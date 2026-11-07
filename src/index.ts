@@ -13,6 +13,7 @@ const TIME_ZONE = process.env.TZ_NAME ?? "America/Chicago";
 
 interface Attrs {
   buffer?: string[];
+  topic?: string;
 }
 
 function getBuffer(input: HandlerInput): string[] {
@@ -21,7 +22,8 @@ function getBuffer(input: HandlerInput): string[] {
 }
 
 function setBuffer(input: HandlerInput, buffer: string[]): void {
-  input.attributesManager.setSessionAttributes({ buffer });
+  const attrs = input.attributesManager.getSessionAttributes() as Attrs;
+  input.attributesManager.setSessionAttributes({ ...attrs, buffer });
 }
 
 function deviceName(input: HandlerInput): string {
@@ -40,6 +42,7 @@ async function flush(input: HandlerInput): Promise<boolean> {
     timeZone: TIME_ZONE,
     device: deviceName(input),
     text: buffer.join(" "),
+    topic: (input.attributesManager.getSessionAttributes() as Attrs).topic,
   });
   await uploadRecord(recordPath(now, TIME_ZONE), content);
   setBuffer(input, []);
@@ -67,12 +70,38 @@ const isIntent = (input: HandlerInput, name: string) =>
 const LaunchHandler: RequestHandler = {
   canHandle: (i) => i.requestEnvelope.request.type === "LaunchRequest",
   handle(i) {
-    setBuffer(i, []);
+    i.attributesManager.setSessionAttributes({ buffer: [] });
     return i.responseBuilder
-      .speak(LISTENING)
+      .speak(`${LISTENING} Say topic followed by a name, or start with note.`)
       .reprompt(pick(REPROMPTS))
       .getResponse();
   },
+};
+
+const TopicHandler: RequestHandler = {
+  canHandle: (i) => isIntent(i, "TopicIntent"),
+  handle(i) {
+    const request = i.requestEnvelope.request;
+    if (request.type !== "IntentRequest") throw new Error("unreachable");
+    const topic = request.intent.slots?.topic?.value?.trim();
+    if (!topic) {
+      return i.responseBuilder
+        .speak("Say topic followed by the topic name.")
+        .reprompt("Say topic followed by the topic name.")
+        .getResponse();
+    }
+    const attrs = i.attributesManager.getSessionAttributes() as Attrs;
+    i.attributesManager.setSessionAttributes({ ...attrs, topic });
+    return i.responseBuilder.speak("Topic set. Go ahead.").reprompt(pick(REPROMPTS)).getResponse();
+  },
+};
+
+const TopicPromptHandler: RequestHandler = {
+  canHandle: (i) => isIntent(i, "TopicPromptIntent"),
+  handle: (i) => i.responseBuilder
+    .speak("Say topic followed by the topic name.")
+    .reprompt("Say topic followed by the topic name.")
+    .getResponse(),
 };
 
 const CaptureHandler: RequestHandler = {
@@ -103,7 +132,7 @@ const HelpHandler: RequestHandler = {
   canHandle: (i) => isIntent(i, "AMAZON.HelpIntent"),
   handle: (i) =>
     i.responseBuilder
-      .speak("Just talk. Say end record when you're done.")
+      .speak("Say topic followed by a name. Start each thought with note. Pause, then say end record when you're done.")
       .reprompt(pick(REPROMPTS))
       .getResponse(),
 };
@@ -141,6 +170,8 @@ const ErrorHandlerImpl: ErrorHandler = {
 export const handler = SkillBuilders.custom()
   .addRequestHandlers(
     LaunchHandler,
+    TopicHandler,
+    TopicPromptHandler,
     CaptureHandler,
     EndRecordHandler,
     HelpHandler,

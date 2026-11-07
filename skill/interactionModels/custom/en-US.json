@@ -1,8 +1,24 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "record",
+      "invocationName": "field-log",
       "intents": [
+        {
+          "name": "TopicIntent",
+          "slots": [
+            { "name": "topic", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "topic {topic}",
+            "set topic to {topic}",
+            "the topic is {topic}"
+          ]
+        },
+        {
+          "name": "TopicPromptIntent",
+          "slots": [],
+          "samples": ["topic", "set topic", "change topic"]
+        },
         {
           "name": "CaptureIntent",
           "slots": [

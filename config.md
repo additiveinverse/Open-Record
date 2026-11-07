@@ -13,7 +13,15 @@ Not secrets. The client ID identifies the app and is safe to commit.
 
 ## Status
 
-Done: Alexa handlers, Markdown and path builders, OneDrive upload, sign-in script, Azure app registration. Unit tests pass (mocked; no live OneDrive or Alexa test yet).
+The Alexa handlers, Markdown and path builders, OneDrive upload, sign-in script, and Azure app registration are implemented. Handler tests use mocked uploads; speech recognition and model changes still need real-device testing.
+
+## Recording and topics
+
+After opening the skill, say `topic Field Notes` as its own turn, then say `note` followed by a thought. After Alexa responds, say `end record` as a separate turn. The topic can also be set or changed after a thought; without one, the record uses `Inbox`. Saying only `topic` prompts for the full command.
+
+Alexa may include `end record` in the dictated text if it is spoken in the same turn. Free-text recognition is limited by the interaction model: start thoughts with `note` for a predictable carrier phrase, and wait for Alexa's response before issuing a command.
+
+To use changes on a device, deploy the updated Lambda with SAM and update and build the Alexa interaction model. The checked-in model uses the invocation name `record`; if the live skill uses `field log`, retain that invocation name when updating the model. Existing recordings are not changed.
 
 ## Next steps (personal machine)
 

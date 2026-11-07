@@ -6,6 +6,7 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc --noEmit",
+    "sam:build": "sam build",
     "test": "vitest run",
     "auth": "tsx scripts/auth.ts"
   },
@@ -24,5 +25,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "allowScripts": {
+    "esbuild@0.23.1": true
   }
 }
