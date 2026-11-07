@@ -85,6 +85,16 @@ describe("Alexa capture", () => {
     expect(stopped.response.shouldEndSession).toBe(true);
   });
 
+  it("explains how to retry when Alexa cannot match a capture utterance", async () => {
+    const fallback = await invoke(intent("AMAZON.FallbackIntent"));
+
+    expect(fallback.response.outputSpeech).toMatchObject({
+      type: "SSML",
+      ssml: expect.stringContaining("Try again starting with I, the, this, or note"),
+    });
+    expect(uploadRecord).not.toHaveBeenCalled();
+  });
+
   it("sets the optional topic at the end and saves immediately", async () => {
     const capture = await invoke(intent("CaptureIntent", "text", "a thought"));
     const end = await invoke(intent("EndRecordIntent"), capture.sessionAttributes);
