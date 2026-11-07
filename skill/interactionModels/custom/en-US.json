@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "field-log",
+      "invocationName": "field log",
       "intents": [
         {
           "name": "TopicIntent",
