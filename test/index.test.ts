@@ -53,7 +53,7 @@ describe("Alexa capture", () => {
 
     expect(uploadRecord).toHaveBeenCalledOnce();
     expect(uploadRecord.mock.calls[0][1]).toContain("topic: Field Notes\n");
-    expect(uploadRecord.mock.calls[0][1]).toContain("a first thought another thought\n\n[[Field Notes]]");
+    expect(uploadRecord.mock.calls[0][1]).toContain("a first thought\n\nanother thought\n\n[[Field Notes]]");
     expect(end.response.shouldEndSession).toBe(true);
   });
 
@@ -66,11 +66,44 @@ describe("Alexa capture", () => {
     expect(uploadRecord.mock.calls[0][1]).toContain("a thought\n\n[[Ideas]]");
   });
 
-  it("defaults to Inbox when no topic is set", async () => {
+  it("asks whether to add a topic before saving to Inbox", async () => {
     const capture = await invoke(intent("CaptureIntent", "text", "a thought"));
-    await invoke(intent("EndRecordIntent"), capture.sessionAttributes);
+    const end = await invoke(intent("EndRecordIntent"), capture.sessionAttributes);
+    expect(uploadRecord).not.toHaveBeenCalled();
+    expect(end.response.outputSpeech).toMatchObject({ type: "SSML", ssml: expect.stringContaining("Add a topic") });
+
+    await invoke(intent("AMAZON.NoIntent"), end.sessionAttributes);
 
     expect(uploadRecord.mock.calls[0][1]).toContain("topic: Inbox\n");
+  });
+
+  it("sets the optional topic at the end and saves immediately", async () => {
+    const capture = await invoke(intent("CaptureIntent", "text", "a thought"));
+    const end = await invoke(intent("EndRecordIntent"), capture.sessionAttributes);
+    await invoke(intent("TopicIntent", "topic", "Ideas"), end.sessionAttributes);
+
+    expect(uploadRecord.mock.calls[0][1]).toContain("topic: Ideas\n");
+    expect(uploadRecord.mock.calls[0][1]).toContain("a thought\n\n[[Ideas]]");
+  });
+
+  it("turns newline and next line commands into single line breaks", async () => {
+    const capture = await invoke(
+      intent("CaptureIntent", "text", "thought one newline thought two next line thought three"),
+    );
+    const end = await invoke(intent("EndRecordIntent"), capture.sessionAttributes);
+    await invoke(intent("AMAZON.NoIntent"), end.sessionAttributes);
+
+    expect(uploadRecord.mock.calls[0][1]).toContain("thought one\nthought two\nthought three\n\n[[Inbox]]");
+  });
+
+  it("turns spoken period and exclamation commands into punctuation", async () => {
+    const capture = await invoke(
+      intent("CaptureIntent", "text", "thought one period next thought exclamation newline last thought period"),
+    );
+    const end = await invoke(intent("EndRecordIntent"), capture.sessionAttributes);
+    await invoke(intent("AMAZON.NoIntent"), end.sessionAttributes);
+
+    expect(uploadRecord.mock.calls[0][1]).toContain("thought one. next thought!!!\nlast thought.\n\n[[Inbox]]");
   });
 
   it("prompts for a topic command without losing the existing buffer", async () => {

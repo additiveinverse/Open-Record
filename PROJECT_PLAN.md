@@ -6,33 +6,36 @@ Source of truth for intent: [README.md](README.md). Prototype status and setup: 
 
 Voice in, flat markdown fragment out, with a topic and optional tags captured by voice. Capture over organization.
 
-## Where the prototype stands
+## Current status
 
-Working (unit-tested with mocks, not yet live): Alexa capture loop, markdown builder, OneDrive upload via Graph, SSM-stored refresh token, SAM deploy template.
+- **Version:** `0.1.0` early alpha (private, pre-1.0; no formal release tag).
+- **Deployment:** the initial Lambda deployment succeeded, and real Echo captures have been saved to OneDrive. Recent local handler changes still need deployment and device verification.
+- **Implemented:** flat Markdown records, topic metadata, Alexa capture/session handling, optional topic at save time, and spoken formatting commands. Automated tests cover the handler and Markdown output; OneDrive tests use mocks.
+- **Not implemented:** voice tags. The Markdown builder supports tag metadata, but the Alexa handler does not collect tags yet.
+- **Validation still needed:** Alexa recognition of the current topic-at-end and formatting flow, OneDrive/Obsidian rendering, and reliable end-of-record behavior on device.
 
 ## Decisions
 
 | Question | Decision |
 | --- | --- |
-| Topic | Asked at the start. Free text, no fixed topic list. |
-| Tags | Spoken as their own utterance ("tag veganaf"). Optional. |
-| Naming | Keep "record" everywhere (matches the invocation name). |
+| Topic | Optional free text, no fixed list. Can be set during capture or at save time; defaults to `Inbox`. |
+| Tags | Optional voice command is planned, but not implemented yet. |
+| Naming | Project name is Open Record; the current Alexa invocation name is `field log`. |
 | Storage | Flat folder under OneDrive `Documents`, for example `Documents/OpenRecord/`. Obsidian opens it as the vault. |
 | Filename | `YYYY-MM-DDTHHMMSS.md`, no year/month folders. |
+| Text formatting | Preserve fragments rather than grammar-correcting. Separate Alexa turns become paragraphs; spoken `newline`/`new line`/`next line`, `period`, and `exclamation` commands add basic formatting. |
 | Example names (Polygnome etc.) | Illustrative only. |
 
 ## Target conversation
 
 ```text
-You:   "Computer, open record"
-Alexa: "Topic?"
-You:   "chickens as food"
-Alexa: "Go ahead."
-You:   "Things are crazy."
-Alexa: "Okay."
-You:   "tag veganaf"
-You:   "tag food sources"
-You:   "End record."
+You:   "Alexa, open field log"
+Alexa: "Making record. Go on."
+You:   "A thought, newline another thought, period"
+Alexa: "Go on."
+You:   "End record"
+Alexa: "Add a topic? Say no, or say topic followed by a name."
+You:   "Topic Field Notes" (or "No")
 Alexa: "Record saved."
 ```
 
@@ -41,63 +44,62 @@ Resulting file:
 ```markdown
 ---
 id: 34d87cc6
-topic: chickens as food
-tags:
-  - veganaf
-  - food-sources
+topic: Field Notes
+tags: []
 created: 2026-11-05T09:41:55
 source: Alexa
 device: Kitchen Echo
 ---
 
-Things are crazy.
+A thought,
+another thought.
 
-[[chickens as food]]
+[[Field Notes]]
 ```
 
-## Gaps between README and prototype
+## Implementation Status
 
-| # | README says | Prototype does | Change |
-| --- | --- | --- | --- |
-| 1 | Topic is part of the core flow | No topic | Prompt "Topic?" on launch; first utterance is the topic |
-| 2 | Front matter `id`, `topic`, `tags`, `created` | `created`, `source`, `device` only | Add `id`, `topic`, `tags` |
-| 3 | Flat vault, `2026-11-05T094155.md` | `Records/YYYY/MM/YYYY-MM-DD-HHMMSS.md` | Flat `Documents/OpenRecord/YYYY-MM-DDTHHMMSS.md` |
-| 4 | Tags are secondary metadata | None | Voice tag command, kept out of the body |
-| 5 | `[[links]]` for Obsidian | None | Emit `[[topic]]` link |
+| Area | Status | Notes |
+| --- | --- | --- |
+| Markdown format and flat path | Complete | Includes ID, topic, tags field, created time, source/device metadata, and topic link. |
+| Topic capture | Implemented; live flow still needs testing | Topic can be set while recording or after `end record`; otherwise it defaults to `Inbox`. |
+| Voice tags | Not implemented | Add `TagIntent`, session state, and handler support; keep tags out of the body. |
+| Spoken formatting | Implemented; recognition needs device testing | Maps newline/next line, period, and exclamation phrases from a captured utterance. |
+| Alexa to OneDrive | Initial deployment and real captures confirmed | Recent local changes have not yet been verified on the Echo. |
+| Obsidian | Not verified | Confirm front-matter properties, tags, and topic links in the vault. |
 
-## Design notes and risks
+## Design Notes and Risks
 
-- **Topic recognition is the weak point.** `CaptureIntent` only matches carrier phrases ("i ...", "the ..."), so "chickens as food" will not match it. Add a `TopicIntent` (`AMAZON.SearchQuery`) with its own carrier phrases and test on a real device early. If bare free text proves unreliable, fall back to "about chickens as food".
-- **Session state:** `awaitingTopic`, then capturing. Attributes hold `topic`, `tags`, `buffer`.
-- **Tags:** `TagIntent` ("tag {tag}") must be its own utterance, not mid-sentence. Multiword tags are allowed; normalize to lowercase with hyphens so Obsidian accepts them.
-- **Default topic:** `Inbox` if the topic is skipped or unrecognized, so capture never fails.
-- **YAML safety:** quote topic and tags containing `:` or `#`.
-- **Documents folder:** Graph writes by path with the existing `Files.ReadWrite` scope and creates the folder on upload.
-- **Filename collisions:** `conflictBehavior=rename` already covers same-second saves.
+- Alexa capture is turn-based. Say the end command separately from dictation; a broad capture phrase or speech recognition may otherwise absorb it into the record.
+- Alexa's `AMAZON.SearchQuery` slot supplies recognized text, not pause timing. Formatting commands work only if Alexa includes their words in the slot transcript.
+- The formatting words `period` and `exclamation` are reserved commands wherever they occur in a capture transcript.
+- Multiword tags should be normalized to lowercase hyphenated values, as already supported by the Markdown builder.
+- Topic and YAML values are quoted when needed; Graph writes to the flat OneDrive folder using the existing delegated `Files.ReadWrite` permission.
+- Filename collisions use Graph's rename behavior.
 
 ## Phases
 
-Nothing is deployed yet, so there is no data to migrate. Code changes come first and the first deploy ships the final format.
+No migration is needed. The initial prototype was deployed before the final format; current records use the flat Markdown layout. The work now is to complete voice metadata and validate the latest flow on the device.
 
-### Phase 1: Format and path
-- `src/markdown.ts`: flat path under `Documents/OpenRecord`, `T`-separated name; front matter with `id`, `topic`, `tags`.
-- Short hex ID generator, tag normalizer, `[[topic]]` line.
-- Update `test/markdown.test.ts`.
+### Phase 1: Format and path (complete)
+- Flat `Documents/OpenRecord/YYYY-MM-DDTHHMMSS.md` path.
+- Front matter includes a short ID, topic, tags field, created time, source, and device; body ends with a `[[topic]]` link.
+- Markdown builder and path tests are in place.
 
-### Phase 2: Topic and tags by voice
-- Interaction model: `TopicIntent` and `TagIntent` (both `AMAZON.SearchQuery`) with carrier phrases.
-- `src/index.ts`: launch asks "Topic?"; session attributes hold `topic`, `tags`, `buffer`; flush passes them to the builder.
-- `src/phrases.ts`: topic prompt and tag acknowledgement.
-- Tests for state flow and the `Inbox` default.
-- Update config.md decisions and out-of-scope list.
+### Phase 2: Voice metadata and capture (in progress)
+- Topic capture is implemented; finish real-device verification of setting it during capture and at save time.
+- Add optional voice tags, including session storage, tag intent/model samples, normalization, and focused tests.
+- Verify spoken line-break and punctuation commands with Alexa recognition.
 
-### Phase 3: First deploy (blocked on personal machine)
-Follow the steps in [config.md](config.md): build, test, `npm run auth`, create the Alexa skill, `sam deploy`, set endpoint, test "open record". Test topic and tag recognition on a real device and adjust carrier phrases.
+### Phase 3: Deployment and device validation (in progress)
+- Initial SAM deployment and real Echo-to-OneDrive captures succeeded.
+- Deploy the latest local handler changes, then test topic-at-end, ending behavior, line breaks, and punctuation on device.
+- Tags can be tested after Phase 2 implements them.
 
-### Phase 4: Obsidian
-- Open `Documents/OpenRecord` as a vault; confirm properties, tags and graph links render.
+### Phase 4: Obsidian verification (not verified)
+- Open `Documents/OpenRecord` as a vault and confirm properties, tags, and graph links render as expected.
 
-### Phase 5: Hardening
+### Phase 5: Hardening (later)
 - Token expiry handling, fallback-intent limits, optional earcon.
 
 ### Later
@@ -108,18 +110,25 @@ Follow the steps in [config.md](config.md): build, test, `npm run auth`, create 
 Task or project management, templates, auto-structuring, editing, replacing human review.
 
 ## Risks
-- Free-text slot recognition depends on carrier phrases; some speech will be missed.
-- Spoken topics may be misrecognized; the `Inbox` default and a fixed topic list limit the damage.
-- Refresh token expires after 90 days unused.
+- Free-text slot recognition depends on Alexa's model and carrier phrases; some speech may be missed or normalized.
+- Spoken topics may be misrecognized; the `Inbox` default avoids losing a record.
+- The refresh token expires after 90 days unused.
 - Personal accounts only; no work PC or tenant.
 
-## Open questions
-1. Tags: hyphenate multiword tags ("food-sources")? Recommended, for Obsidian.
-2. Emit the `[[topic]]` link always, or skip it for `Inbox`?
+## Open Questions
+1. What tag command and acknowledgement are least disruptive in the capture loop?
+2. Do spoken formatting commands survive Alexa transcription consistently on the target Echo?
 
 ## Project log
 
 Newest first. One entry per working session: what happened, what was decided, what is next.
+
+### 2026-11-07: First device tests and capture-flow refinement
+- **Version:** package remains `0.1.0` early alpha; this is not a 1.0 release.
+- **Confirmed:** initial SAM deployment works, and real Echo captures reached OneDrive with topic metadata.
+- **Implemented since initial deployment:** flat Markdown format, optional topic-at-save flow, paragraph spacing between turns, and spoken newline/period/exclamation formatting commands; automated tests cover these behaviors.
+- **Still outstanding:** tags, device validation of the latest local flow, and Obsidian rendering checks.
+- **Next:** deploy the latest handler, test the revised end/topic/formatting flow on the Echo, then implement tags.
 
 ### 2026-11-06: Deploy the prototype as-is
 - **Decision:** deploy the current prototype before building Phases 1-2. Real-device behavior of carrier phrases and free-text capture is the biggest unknown, and nothing else can be validated without it.

@@ -58,12 +58,15 @@
             "save record",
             "save the record",
             "save",
+            "that's it",
+            "that's it for now",
             "i am done",
             "i'm done",
             "done"
           ]
         },
         { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.NoIntent", "samples": [] },
         { "name": "AMAZON.HelpIntent", "samples": [] },
         { "name": "AMAZON.StopIntent", "samples": [] },
         { "name": "AMAZON.FallbackIntent", "samples": [] },

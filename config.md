@@ -17,9 +17,9 @@ The Alexa handlers, Markdown and path builders, OneDrive upload, sign-in script,
 
 ## Recording and topics
 
-After opening the skill, say `topic Field Notes` as its own turn, then say `note` followed by a thought. After Alexa responds, say `end record` as a separate turn. The topic can also be set or changed after a thought; without one, the record uses `Inbox`. Saying only `topic` prompts for the full command.
+After opening the skill, it immediately says "Making record. Go on." Speak naturally. Each Alexa capture turn is stored as a separate paragraph. Say `end record` when finished; if no topic was set during capture, Alexa asks whether to add one. Say `no` to save under `Inbox`, or `topic Field Notes` to add a topic and save.
 
-Alexa may include `end record` in the dictated text if it is spoken in the same turn. Free-text recognition is limited by the interaction model: start thoughts with `note` for a predictable carrier phrase, and wait for Alexa's response before issuing a command.
+Alexa may include an ending phrase in dictated text if it is spoken in the same turn. Say the end command separately. Separate capture turns are separated as paragraphs. Within a turn, say `newline` (or `new line`) or `next line` for a single line break, `period` for `.`, and `exclamation` for `!!!`. These phrases are treated as formatting commands wherever they occur in dictated text. Other punctuation is preserved when Alexa recognizes it but is not inferred.
 
 To use changes on a device, deploy the updated Lambda with SAM and update and build the Alexa interaction model. The checked-in model uses the invocation name `record`; if the live skill uses `field log`, retain that invocation name when updating the model. Existing recordings are not changed.
 

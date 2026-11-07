@@ -14,6 +14,7 @@ const TIME_ZONE = process.env.TZ_NAME ?? "America/Chicago";
 interface Attrs {
   buffer?: string[];
   topic?: string;
+  awaitingFinalTopic?: boolean;
 }
 
 function getBuffer(input: HandlerInput): string[] {
@@ -24,6 +25,15 @@ function getBuffer(input: HandlerInput): string[] {
 function setBuffer(input: HandlerInput, buffer: string[]): void {
   const attrs = input.attributesManager.getSessionAttributes() as Attrs;
   input.attributesManager.setSessionAttributes({ ...attrs, buffer });
+}
+
+function formatSpokenCommands(text: string): string {
+  return text
+    .replace(/\s*\bperiod\b\s*/gi, ". ")
+    .replace(/\s*\bexclamation\b\s*/gi, "!!! ")
+    .replace(/\s*\b(?:new\s*line|next line)\b\s*/gi, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
 }
 
 function deviceName(input: HandlerInput): string {
@@ -41,7 +51,7 @@ async function flush(input: HandlerInput): Promise<boolean> {
     date: now,
     timeZone: TIME_ZONE,
     device: deviceName(input),
-    text: buffer.join(" "),
+    text: buffer.join("\n\n"),
     topic: (input.attributesManager.getSessionAttributes() as Attrs).topic,
   });
   await uploadRecord(recordPath(now, TIME_ZONE), content);
@@ -72,7 +82,7 @@ const LaunchHandler: RequestHandler = {
   handle(i) {
     i.attributesManager.setSessionAttributes({ buffer: [] });
     return i.responseBuilder
-      .speak(`${LISTENING} Say topic followed by a name, or start with note.`)
+      .speak(`${LISTENING} ${pick(ACKS)}`)
       .reprompt(pick(REPROMPTS))
       .getResponse();
   },
@@ -91,7 +101,8 @@ const TopicHandler: RequestHandler = {
         .getResponse();
     }
     const attrs = i.attributesManager.getSessionAttributes() as Attrs;
-    i.attributesManager.setSessionAttributes({ ...attrs, topic });
+    i.attributesManager.setSessionAttributes({ ...attrs, topic, awaitingFinalTopic: false });
+    if (attrs.awaitingFinalTopic) return saveAndEnd(i);
     return i.responseBuilder.speak("Topic set. Go ahead.").reprompt(pick(REPROMPTS)).getResponse();
   },
 };
@@ -109,7 +120,8 @@ const CaptureHandler: RequestHandler = {
   handle(i) {
     const request = i.requestEnvelope.request;
     if (request.type !== "IntentRequest") throw new Error("unreachable");
-    const spoken = request.intent.slots?.text?.value?.trim();
+    const rawText = request.intent.slots?.text?.value;
+    const spoken = rawText ? formatSpokenCommands(rawText) : "";
     if (spoken) {
       setBuffer(i, [...getBuffer(i), spoken]);
     }
@@ -125,14 +137,32 @@ const EndRecordHandler: RequestHandler = {
     isIntent(i, "EndRecordIntent") ||
     isIntent(i, "AMAZON.StopIntent") ||
     isIntent(i, "AMAZON.CancelIntent"),
-  handle: saveAndEnd,
+  handle(i) {
+    if (!isIntent(i, "EndRecordIntent")) return saveAndEnd(i);
+    const attrs = i.attributesManager.getSessionAttributes() as Attrs;
+    if (attrs.topic || getBuffer(i).length === 0) return saveAndEnd(i);
+    i.attributesManager.setSessionAttributes({ ...attrs, awaitingFinalTopic: true });
+    return i.responseBuilder
+      .speak("Add a topic? Say no, or say topic followed by a name.")
+      .reprompt("Say no, or say topic followed by a name.")
+      .getResponse();
+  },
+};
+
+const NoIntentHandler: RequestHandler = {
+  canHandle: (i) => isIntent(i, "AMAZON.NoIntent"),
+  handle(i) {
+    const attrs = i.attributesManager.getSessionAttributes() as Attrs;
+    if (attrs.awaitingFinalTopic) return saveAndEnd(i);
+    return i.responseBuilder.speak("Okay. Go ahead.").reprompt(pick(REPROMPTS)).getResponse();
+  },
 };
 
 const HelpHandler: RequestHandler = {
   canHandle: (i) => isIntent(i, "AMAZON.HelpIntent"),
   handle: (i) =>
     i.responseBuilder
-      .speak("Say topic followed by a name. Start each thought with note. Pause, then say end record when you're done.")
+      .speak("Go ahead and speak. Say topic followed by a name to set one, or end record when you're done.")
       .reprompt(pick(REPROMPTS))
       .getResponse(),
 };
@@ -174,6 +204,7 @@ export const handler = SkillBuilders.custom()
     TopicPromptHandler,
     CaptureHandler,
     EndRecordHandler,
+    NoIntentHandler,
     HelpHandler,
     FallbackHandler,
     SessionEndedHandler,
