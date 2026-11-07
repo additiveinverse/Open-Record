@@ -1,0 +1,59 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "record",
+      "intents": [
+        {
+          "name": "CaptureIntent",
+          "slots": [
+            { "name": "text", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "note {text}",
+            "remember {text}",
+            "record {text}",
+            "i {text}",
+            "i just {text}",
+            "i need to {text}",
+            "i was {text}",
+            "i think {text}",
+            "the {text}",
+            "my {text}",
+            "we {text}",
+            "it {text}",
+            "this {text}",
+            "that {text}",
+            "what if {text}",
+            "maybe {text}",
+            "need to {text}",
+            "remind me {text}",
+            "idea {text}",
+            "thought {text}"
+          ]
+        },
+        {
+          "name": "EndRecordIntent",
+          "slots": [],
+          "samples": [
+            "end record",
+            "end the record",
+            "end recording",
+            "stop recording",
+            "save record",
+            "save the record",
+            "save",
+            "i am done",
+            "i'm done",
+            "done"
+          ]
+        },
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] }
+      ],
+      "types": []
+    }
+  }
+}

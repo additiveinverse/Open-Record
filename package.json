@@ -1,0 +1,28 @@
+{
+  "name": "open-record",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Voice-first personal capture: Alexa skill -> Lambda -> OneDrive Markdown",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "vitest run",
+    "auth": "tsx scripts/auth.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ssm": "^3.600.0",
+    "ask-sdk-core": "^2.14.0",
+    "ask-sdk-model": "^1.86.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.140",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.23.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

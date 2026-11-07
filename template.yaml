@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Open Record - Alexa capture skill backend
+
+Parameters:
+  AlexaSkillId:
+    Type: String
+    Description: Skill ID (amzn1.ask.skill.*) allowed to invoke this function
+  TimeZone:
+    Type: String
+    Default: America/Chicago
+  OneDriveParamPrefix:
+    Type: String
+    Default: /open-record/onedrive
+
+Resources:
+  RecordFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Target: es2022
+        Sourcemap: true
+        EntryPoints:
+          - src/index.ts
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs22.x
+      Timeout: 8
+      MemorySize: 256
+      Environment:
+        Variables:
+          TZ_NAME: !Ref TimeZone
+          ONEDRIVE_PARAM_PREFIX: !Ref OneDriveParamPrefix
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:PutParameter
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${OneDriveParamPrefix}/*
+      Events:
+        AlexaSkill:
+          Type: AlexaSkill
+          Properties:
+            SkillId: !Ref AlexaSkillId
+
+Outputs:
+  RecordFunctionArn:
+    Value: !GetAtt RecordFunction.Arn

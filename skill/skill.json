@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "en-US": {
+          "name": "Record",
+          "summary": "Voice capture of thoughts to a permanent archive.",
+          "description": "Open Record saves each spoken thought as its own timestamped text file.",
+          "examplePhrases": [
+            "Alexa, open Record"
+          ]
+        }
+      },
+      "isAvailableWorldwide": false,
+      "testingInstructions": "Personal use. Development stage only.",
+      "category": "ORGANIZERS_AND_ASSISTANTS",
+      "distributionCountries": []
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "REPLACE_WITH_LAMBDA_ARN"
+        }
+      }
+    },
+    "manifestVersion": "1.0"
+  }
+}
