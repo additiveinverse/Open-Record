@@ -60,9 +60,17 @@ describe("Alexa capture", () => {
 
   it("accepts the first thought immediately after launch", async () => {
     const launch = await invoke({ type: "LaunchRequest" });
+    expect(launch.response.outputSpeech).toMatchObject({
+      type: "SSML",
+      ssml: expect.stringContaining("soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_tally_01"),
+    });
     const capture = await invoke(intent("FirstPersonCaptureIntent", "text", "think this is a fragment"), launch.sessionAttributes);
 
     expect(capture.sessionAttributes).toMatchObject({ buffer: ["I think this is a fragment"] });
+    expect(capture.response.outputSpeech).toMatchObject({
+      type: "SSML",
+      ssml: expect.stringContaining("soundbank://soundlibrary/ui/gameshow/amzn_ui_sfx_gameshow_tally_01"),
+    });
   });
 
   it("can set a topic after dictation and saves it when the session ends", async () => {

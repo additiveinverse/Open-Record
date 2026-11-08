@@ -7,7 +7,7 @@ import {
 import { Response } from "ask-sdk-model";
 import { buildMarkdown, recordPath } from "./markdown";
 import { uploadRecord } from "./onedrive";
-import { ACKS, LISTENING, REPROMPTS, SAVED, pick } from "./phrases";
+import { READY_BEEP, SAVED } from "./phrases";
 
 const TIME_ZONE = process.env.TZ_NAME ?? "America/Chicago";
 
@@ -82,8 +82,8 @@ const LaunchHandler: RequestHandler = {
   handle(i) {
     i.attributesManager.setSessionAttributes({ buffer: [] });
     return i.responseBuilder
-      .speak(`${LISTENING} ${pick(ACKS)}`)
-      .reprompt(pick(REPROMPTS))
+      .speak(READY_BEEP)
+      .reprompt(READY_BEEP)
       .getResponse();
   },
 };
@@ -103,7 +103,7 @@ const TopicHandler: RequestHandler = {
     const attrs = i.attributesManager.getSessionAttributes() as Attrs;
     i.attributesManager.setSessionAttributes({ ...attrs, topic, awaitingFinalTopic: false });
     if (attrs.awaitingFinalTopic) return saveAndEnd(i);
-    return i.responseBuilder.speak("Topic set. Go ahead.").reprompt(pick(REPROMPTS)).getResponse();
+    return i.responseBuilder.speak(READY_BEEP).reprompt(READY_BEEP).getResponse();
   },
 };
 
@@ -128,8 +128,8 @@ const CaptureHandler: RequestHandler = {
       setBuffer(i, [...getBuffer(i), spoken]);
     }
     return i.responseBuilder
-      .speak(pick(ACKS))
-      .reprompt(pick(REPROMPTS))
+      .speak(READY_BEEP)
+      .reprompt(READY_BEEP)
       .getResponse();
   },
 };
@@ -156,7 +156,7 @@ const NoIntentHandler: RequestHandler = {
   handle(i) {
     const attrs = i.attributesManager.getSessionAttributes() as Attrs;
     if (attrs.awaitingFinalTopic) return saveAndEnd(i);
-    return i.responseBuilder.speak("Okay. Go ahead.").reprompt(pick(REPROMPTS)).getResponse();
+    return i.responseBuilder.speak(READY_BEEP).reprompt(READY_BEEP).getResponse();
   },
 };
 
@@ -165,7 +165,7 @@ const HelpHandler: RequestHandler = {
   handle: (i) =>
     i.responseBuilder
       .speak("Go ahead and speak. Say topic followed by a name to set one, or end record when you're done.")
-      .reprompt(pick(REPROMPTS))
+      .reprompt(READY_BEEP)
       .getResponse(),
 };
 
@@ -175,7 +175,7 @@ const FallbackHandler: RequestHandler = {
   handle: (i) =>
     i.responseBuilder
       .speak("Sorry, I missed that. Try again starting with I, okay, all right, or note.")
-      .reprompt(pick(REPROMPTS))
+      .reprompt(READY_BEEP)
       .getResponse(),
 };
 
