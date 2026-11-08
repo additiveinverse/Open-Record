@@ -25,19 +25,18 @@
             { "name": "text", "type": "AMAZON.SearchQuery" }
           ],
           "samples": [
+            "ok {text}",
+            "okay {text}",
+            "all right {text}",
+            "alright {text}",
+            "bet {text}",
+            "sure {text}",
+            "yeah {text}",
+            "yep {text}",
+            "got it {text}",
             "note {text}",
             "remember {text}",
-            "record {text}",
-            "the {text}",
-            "my {text}",
-            "we {text}",
-            "it {text}",
-            "this {text}",
-            "that {text}",
-            "what if {text}",
-            "maybe {text}",
-            "thought {text}",
-            "idea {text}"
+            "record {text}"
           ]
         },
         {

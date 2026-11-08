@@ -174,7 +174,7 @@ const FallbackHandler: RequestHandler = {
   canHandle: (i) => isIntent(i, "AMAZON.FallbackIntent") || isIntent(i, "AMAZON.NavigateHomeIntent"),
   handle: (i) =>
     i.responseBuilder
-      .speak("Sorry, I missed that. Try again starting with I, the, this, or note.")
+      .speak("Sorry, I missed that. Try again starting with I, okay, all right, or note.")
       .reprompt(pick(REPROMPTS))
       .getResponse(),
 };

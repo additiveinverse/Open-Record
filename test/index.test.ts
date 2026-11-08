@@ -46,6 +46,7 @@ describe("Alexa capture", () => {
 
   it("saves the spoken topic and keeps it across captured turns", async () => {
     const launch = await invoke({ type: "LaunchRequest" });
+    expect(launch.sessionAttributes).toEqual({ buffer: [] });
     const topic = await invoke(intent("TopicIntent", "topic", "Field Notes"), launch.sessionAttributes);
     const capture = await invoke(intent("CaptureIntent", "text", "a first thought"), topic.sessionAttributes);
     const second = await invoke(intent("CaptureIntent", "text", "another thought"), capture.sessionAttributes);
@@ -55,6 +56,13 @@ describe("Alexa capture", () => {
     expect(uploadRecord.mock.calls[0][1]).toContain("topic: Field Notes\n");
     expect(uploadRecord.mock.calls[0][1]).toContain("a first thought\n\nanother thought\n\n[[Field Notes]]");
     expect(end.response.shouldEndSession).toBe(true);
+  });
+
+  it("accepts the first thought immediately after launch", async () => {
+    const launch = await invoke({ type: "LaunchRequest" });
+    const capture = await invoke(intent("FirstPersonCaptureIntent", "text", "think this is a fragment"), launch.sessionAttributes);
+
+    expect(capture.sessionAttributes).toMatchObject({ buffer: ["I think this is a fragment"] });
   });
 
   it("can set a topic after dictation and saves it when the session ends", async () => {
@@ -90,7 +98,7 @@ describe("Alexa capture", () => {
 
     expect(fallback.response.outputSpeech).toMatchObject({
       type: "SSML",
-      ssml: expect.stringContaining("Try again starting with I, the, this, or note"),
+      ssml: expect.stringContaining("Try again starting with I, okay, all right, or note"),
     });
     expect(uploadRecord).not.toHaveBeenCalled();
   });
